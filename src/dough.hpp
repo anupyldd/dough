@@ -647,6 +647,7 @@ namespace dough
         detail::uset_insert(tags.set, std::forward<First>(first), std::forward<Rest>(rest)...);
         return tags;
     }
+    include_tags inc() { return include_tags(); }
 
     /**
     * @brief helper function for excluding tags in filter
@@ -661,6 +662,7 @@ namespace dough
         detail::uset_insert(tags.set, std::forward<First>(first), std::forward<Rest>(rest)...);
         return tags;
     }
+    exclude_tags exc() { return exclude_tags(); }
 
     /**
     * @class test
@@ -876,7 +878,6 @@ namespace dough
         */
         void run(std::string_view name)
         {
-            start_print();
             for (auto& test : test_list)
             {
                 if (test.name() == name)
@@ -887,7 +888,6 @@ namespace dough
                     return;
                 }
             }
-            finish_print();
         }
 
         /**
@@ -897,7 +897,6 @@ namespace dough
             const include_tags& inc_tags,
             const exclude_tags& exc_tags = {})
         {
-            start_print();
             for (auto& test : test_list)
             {
                 // skip test with excluded tag
@@ -911,7 +910,6 @@ namespace dough
                     if (teardown_function) teardown_function();
                 }
             }
-            finish_print();
         }
 
     private:
@@ -1012,9 +1010,7 @@ namespace dough
                 // skip suites with excluded tags
                 if (detail::uset_have_common(st.tags(), exc_tags.set)) continue;
 
-                // run suite if no included tags are specified or at least one suite tag satisfies the requirement
-                if (inc_tags.set.empty() || detail::uset_have_common(st.tags(), inc_tags.set))
-                    st.run(inc_tags, exc_tags);
+                st.run(inc_tags, exc_tags);
             }
         }
 
