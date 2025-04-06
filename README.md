@@ -1,38 +1,37 @@
 ## dough
 
-**Dough** is a minimalist header-only C++20 testing library. It includes a structure for organizing an running tests, as well as many functions for checking values.
+**Dough** is a header-only C++20 testing library. It includes a structure for organizing and running tests, as well as many functions for checking values.
 
 ### Registry
 
-The main class of **dough** is a `registry`. It is a class for storing `test`s grouped into `suite`s. Each suite and test can have any number of tags, which can be used for filtering, which tests are executed. Tests inherit the tags of a suite they belong to, but can also have their own additional tags.
+The main class of **dough** is a `registry`. It is a class for storing `test`s grouped into `suite`s. Each suite and test can have any number of tags, which can be used for filtering. Tests inherit the tags of the suite they belong to but can also have their own additional tags.
 
 To see how to use the registry, see the example below.
 
 ### Functions
 
-*All checks and requires have check_all / require_all version, which runs the same check but for a list of values instead of single value.*
+*All checks have a `require` version.*
+- *checks are non-blocking: on fail, they output an error message but still allow further tests to run*
+- *requires are blocking: on fail, they output an error message and call std::terminate()*
 
-*By default checks and requires output messages on fail. You can disable this by passing `silent` as a template parameter.*
+*All checks and requires have a `check_all` / `require_all` version, which runs the same check but for a list of values instead of a single value.*
 
-- **check** (non-blocking: on fail they output an error message but still allow further tests to run)
-    - `check_equal` - check for equality. works for floats as well, treats difference in range [-eps, eps] as equal;
-    - `check_true` - checks if the value is true;
-    - `check_false` - checks if the value is false;
-    - `check_null` - checks if the value is nullptr;
-    - `check_not_null` - checks if the value is not nullptr;
-    - `check_near` - checks if two values are within specified tolerance of each other.
-    
-- **require** (blocking: on fail they output an error message and terminate)
-    - `require_equal` - requires equality. works for floats as well, treats difference in range [-eps, eps] as equal;
-    - `require_true` - requires the value to be true;
-    - `require_false` - requires the value to be false;
-    - `require_null` - requires the value to be nullptr;
-    - `require_not_null` - requires the value to be nullptr;
-    - `require_near` - requires two values to be within specified tolerance of each other.
+*By default, checks and requires output messages on fail. You can disable this by passing `silent` as a template parameter.*
+
+#### Function list:
+
+- `check_equal` - check for equality, works for floats as well, treats difference in range [-eps, eps] as equal;
+- `check_true` - checks if the value is true;
+- `check_false` - checks if the value is false;
+- `check_null` - checks if the value is nullptr;
+- `check_not_null` - checks if the value is not nullptr;
+- `check_near` - checks if two values are within specified tolerance of each other.
     
 ### Example
 
 ```cpp
+
+#include "dough.hpp"
 
 int main()
 {
