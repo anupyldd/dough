@@ -13,7 +13,7 @@ int main()
         .add(
             test("test 1")
             .tags("tag 3")
-            .func([]() { check_equal(1, 2, "test 1 fail"); })
+            .func([]() {  throw std::exception("hi"); check_equal(1, 1, "test 1 fail"); })
         )
         .add(
             test("test 2")
@@ -33,12 +33,12 @@ int main()
             test("test 4")
             .func([]() { check_not_null(nullptr, "test 4 fail"); })
         );
-
-    //reg.run();
+    
+    reg.run();
     //std::cout << "--------------------\n";
     //reg.run("suite 1");
     //std::cout << "--------------------\n";
     //reg.run("suite 1", "test 1");
     //std::cout << "--------------------\n";
-    reg.run(inc("tag 1"), exc("tag 3", "tag 4"));
+    //reg.run(inc("tag 1"), exc("tag 3", "tag 4"));
 }

@@ -10,13 +10,15 @@ To see how to use the registry, see the example below.
 
 ### Functions
 
-*All checks have a `require` version.*
-- *checks are non-blocking: on fail, they output an error message but still allow further tests to run*
-- *requires are blocking: on fail, they output an error message and call std::terminate()*
+To check a value, use one of `check_` functions listed below.
 
-*All checks and requires have a `check_all` / `require_all` version, which runs the same check but for a list of values instead of a single value.*
+All checks have a `require_` version.
+- checks are non-blocking: on fail, they output an error message and throws an exception. You don't have to catch the exception unless you use checks outside `test` objects. You can manually disable exception throwing by passing `except_off` as a template parameter, but this may affect the accuracy of test evaluation.
+- requires are blocking: on fail, they output an error message and call std::terminate(). You can modify this behaviour by providing your own `on_require_fail()` callback implementation.
 
-*By default, checks and requires output messages on fail. You can disable this by passing `silent` as a template parameter.*
+All checks and requires have a `check_all` / `require_all` version, which runs the same check but for a list of values instead of a single value.
+
+By default, checks and requires output messages on fail. You can disable this by passing `silent` as a template parameter.
 
 #### Function list:
 
@@ -56,7 +58,7 @@ int main()
             // create test object with name 'test 1'
             test("test 1")
             // add another tag to this test on top of 
-            // 'tag 1' and 'tag 2' inheritef from the suite
+            // 'tag 1' and 'tag 2' inherited from the suite
             // (optional)
             .tags("tag 3")
             // set the test function
