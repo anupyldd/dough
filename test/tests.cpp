@@ -4,41 +4,53 @@ int main()
 {
     using namespace dough;
 
+    const std::string no_see{ "should NOT see this" };
+
     registry reg;
     
-    reg .suite("suite 1")
-        .tags("tag 1","tag 2")
-        .setup([]() {std::cout << "first suite setup\n"; })
-        .teardown([]() {std::cout << "first suite teardown\n"; })
+    reg.suite("checks")
         .add(
-            test("test 1")
-            .tags("tag 3")
-            .func([]() {  throw std::exception("hi"); check_equal(1, 1, "test 1 fail"); })
+            test("equal")
+            .func([&]() {
+                check_equal(1.0f, 1.0f, no_see);
+                check_all_equal({ 1,1,1 }, 1, no_see);
+                })
         )
         .add(
-            test("test 2")
-            .func([]() { check_true(false, "test 2 fail"); })
-        );
-
-    reg.suite("suite 2")
-        .tags("tag 1", "tag 4")
-        .setup([]() {std::cout << "second suite setup\n"; })
-        .teardown([]() {std::cout << "second suite teardown\n"; })
-        .add(
-            test("test 3")
-            .tags("tag 3")
-            .func([]() { check_false(true, "test 3 fail"); })
+            test("true")
+            .func([&]() {
+                check_true(true, no_see);
+                check_all_true({ true,true }, no_see);
+                })
         )
         .add(
-            test("test 4")
-            .func([]() { check_not_null(nullptr, "test 4 fail"); })
+            test("false")
+            .func([&]() {
+                check_false(false, no_see);
+                check_all_false({ false,false }, no_see);
+                })
+        )
+        .add(
+            test("null")
+            .func([&]() {
+                check_null(nullptr, no_see);
+                check_all_null({ nullptr,nullptr }, no_see);
+                })
+        )
+        .add(
+            test("not_null")
+            .func([&]() {
+                check_not_null(&no_see, no_see);
+                check_all_not_null({ &no_see,&no_see }, no_see);
+                })
+        )
+        .add(
+            test("near")
+            .func([&]() {
+                check_near(1.001f, 1.0015f, 0.001f, no_see);
+                check_all_near({ 1.001f,1.0012f }, 1.0015f, 0.001f, no_see);
+                })
         );
     
     reg.run();
-    //std::cout << "--------------------\n";
-    //reg.run("suite 1");
-    //std::cout << "--------------------\n";
-    //reg.run("suite 1", "test 1");
-    //std::cout << "--------------------\n";
-    //reg.run(inc("tag 1"), exc("tag 3", "tag 4"));
 }
