@@ -50,33 +50,57 @@ namespace dough
         /**
         * @brief formats fail message
         */
-        template<class... T>
-        std::string fail_format(const std::string& message, const std::string& check_type,
-            const std::source_location& location, T... values)
+        template<class T1, class T2>
+        std::string fail_format(
+            const std::string& message,
+            const std::string& check_type,
+            const std::source_location& location,
+            T1 expected,
+            T2 actual)
         {
-            std::stringstream valsstr;
-            valsstr.precision(10);
-            detail::append_values(valsstr, "values:", values...);
-
             std::stringstream result;
-            result << "[fail] [" <<
-                check_type << "] [file: " <<
-                std::string(location.file_name()) << ", line: " <<
-                location.line() << "] [" << valsstr.str() << "] message: " <<
-                message << "\n";
+            result << std::boolalpha;
+            result.precision(10);
+
+            result << "[FAIL   ] " << check_type << '\n' <<
+                "    File     : " << std::string(location.file_name()) << '\n' <<
+                "    Line     : " << location.line() << '\n' <<
+                "    Expected : " << expected << '\n' <<
+                "    Actual   : " << actual << "\n\n";
 
             return result.str();
         }
 
         /**
+        * @struct test_fail
+        * @brief struct to throw when test fails
+        */
+        struct test_fail
+        {
+            test_fail() = default;
+
+            template<class T1, class T2>
+            test_fail(
+                const std::string& message,
+                const std::string& check_type,
+                const std::source_location& location,
+                T1 expected,
+                T2 actual)
+            {
+                msg = fail_format(message, check_type, location, expected, actual);
+            }
+
+            std::string msg = "not initialized";
+        };
+
+        /**
         * @brief prints formatted check fail message
         * @param values values used in the test
         */
-        template<class... T>
-        void fail_print(const std::string& message, const std::string& check_type,
-            const std::source_location& location, T... values)
+        template<class T>
+        void fail_print(const test_fail& fail)
         {
-            std::cerr << fail_format(message, check_type, location, values...);
+            std::cerr << fail.msg;
         }
 
         /**
@@ -92,12 +116,6 @@ namespace dough
         {
             return (value > epsilon) ? 1 : (value < -epsilon) ? -1 : 0;
         }
-
-        /**
-        * @struct test_fail
-        * @brief struct to throw when test fails
-        */
-        struct test_fail {};
     }
 
     /**
@@ -125,8 +143,8 @@ namespace dough
         * @param message message that is printed when check fails
         * @param location location of check fail in source, don't change this unless you have a good reason to
         */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
-    inline bool check_equal(T first, T second, const std::string& message = std::string(),
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
+    inline bool check_equal(T actual, T expected, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
         bool equal = false;
@@ -134,18 +152,20 @@ namespace dough
         // floats
         if constexpr (std::is_floating_point_v<T>)
         {
-            equal = (detail::sign_epsilon(first - second) == 0);
+            equal = (detail::sign_epsilon(actual - expected) == 0);
         }
         // other
         else
         {
-            equal = (first == second);
+            equal = (actual == expected);
         }
 
         if (!equal)
         {
-            if constexpr (M::value) detail::fail_print(message, "equal", location, first, second);
-            if constexpr (E::value) throw detail::test_fail{};
+            detail::test_fail fail(message, "check_equal", location, expected, actual);
+
+            if constexpr (M::value) detail::fail_print(fail);
+            if constexpr (E::value) throw fail;
         }
 
         return equal;
@@ -158,7 +178,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_all_equal(const std::initializer_list<T>&list, T value,
         const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
@@ -176,14 +196,16 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_true(T value, const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
         if (!value)
         {
-            if constexpr (M::value) detail::fail_print(message, "true", location, value);
-            if constexpr (E::value) throw detail::test_fail{};
+            detail::test_fail fail(message, "check_true", location, true, value);
+
+            if constexpr (M::value) detail::fail_print(fail);
+            if constexpr (E::value) throw fail;
         }
 
         return value;
@@ -195,7 +217,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_all_true(std::initializer_list<T> list, const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -212,14 +234,16 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_false(T value, const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
         if (value)
         {
-            if constexpr (M::value) detail::fail_print(message, "false", location, value);
-            if constexpr (E::value) throw detail::test_fail{};
+            detail::test_fail fail(message, "check_false", location, false, value);
+
+            if constexpr (M::value) detail::fail_print(fail);
+            if constexpr (E::value) throw fail;
         }
 
         return !value;
@@ -231,7 +255,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_all_false(std::initializer_list<T> list, const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -248,14 +272,16 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_null(T value, const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
         if (value != nullptr)
         {
-            if constexpr (M::value) detail::fail_print(message, "null", location, value);
-            if constexpr (E::value) throw detail::test_fail{};
+            detail::test_fail fail(message, "check_null", location, nullptr, value);
+
+            if constexpr (M::value) detail::fail_print(fail);
+            if constexpr (E::value) throw fail;
         }
 
         return static_cast<bool>(!value);
@@ -267,7 +293,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_all_null(std::initializer_list<T> list, const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -284,14 +310,16 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_not_null(T value, const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
         if (value == nullptr)
         {
-            if constexpr (M::value) detail::fail_print(message, "not_null", location, value);
-            if constexpr (E::value) throw detail::test_fail{};
+            detail::test_fail fail(message, "check_not_null", location, "not null", value);
+
+            if constexpr (M::value) detail::fail_print(fail);
+            if constexpr (E::value) throw fail;
         }
 
         return static_cast<bool>(value);
@@ -303,7 +331,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_all_not_null(std::initializer_list<T> list, const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -322,14 +350,17 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_near(T first, T second, T tolerance, const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
-        if (std::abs(first - second) <= tolerance) return true;
+        T diff = std::abs(first - second);
+        if (diff <= tolerance) return true;
 
-        if constexpr (M::value) detail::fail_print(message, "near", location, first, second, tolerance);
-        if constexpr (E::value) throw detail::test_fail{};
+        detail::test_fail fail(message, "check_near", location, tolerance, diff);
+
+        if constexpr (M::value) detail::fail_print(fail);
+        if constexpr (E::value) throw fail;
 
         return false;
     }
@@ -342,7 +373,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, detail::except_mode E = except_on, class T>
+    template<detail::log_mode M = silent, detail::except_mode E = except_on, class T>
     inline bool check_all_near(std::initializer_list<T> list, T value, T tolerance,
         const std::string & message = std::string(),
         const std::source_location& location = std::source_location::current())
@@ -370,7 +401,7 @@ namespace dough
     * @param message message that is printed when requirement fails
     * @param location location of requirement fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_equal(T first, T second, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -388,7 +419,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_all_equal(const std::initializer_list<T>& list, T value,
         const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
@@ -405,7 +436,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of requirement fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_true(T value, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -422,7 +453,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_all_true(std::initializer_list<T> list, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -438,7 +469,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of requirement fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_false(T value, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -455,7 +486,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_all_false(std::initializer_list<T> list, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -471,7 +502,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of requirement fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_null(T value, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -488,7 +519,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_all_null(std::initializer_list<T> list, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -504,7 +535,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_not_null(T value, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -521,7 +552,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_all_not_null(std::initializer_list<T> list, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -539,7 +570,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     bool require_near(T first, T second, T tolerance, const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
     {
@@ -558,7 +589,7 @@ namespace dough
     * @param message message that is printed when check fails
     * @param location location of check fail in source, don't change this unless you have a good reason to
     */
-    template<detail::log_mode M = loud, class T>
+    template<detail::log_mode M = silent, class T>
     inline void require_all_near(std::initializer_list<T> list, T value, T tolerance,
         const std::string& message = std::string(),
         const std::source_location& location = std::source_location::current())
@@ -664,12 +695,17 @@ namespace dough
     }
     exclude_tags exc() { return exclude_tags(); }
 
+    class suite;
+    class test;
+
     /**
     * @class test
     * @brief represents a single test
     */
     class test
     {
+        friend class suite;
+
     public:
         test(std::string name) noexcept : test_name(std::move(name)) {}
         test(const test& src) = default;
@@ -730,12 +766,13 @@ namespace dough
             {
                 try
                 {
+                    start_print();
                     function();
                     result_print(true);
                 }
-                catch (detail::test_fail)
+                catch (const detail::test_fail& f)
                 {
-                    result_print(false);
+                    result_print(false, f);
                 }
                 catch (const std::exception& e)
                 {
@@ -750,27 +787,41 @@ namespace dough
 
     private:
         /**
+        * @brief set owner suite
+        */
+        void owner(const std::string& name) noexcept
+        {
+            owner_name = name;
+        }
+
+        /**
         * @brief prints test run start message
         */
-        void start_print(const std::string& suite_name = {})
+        void start_print() const noexcept
         {
-
+            std::stringstream sstr;
+            sstr << "[  RUN  ] " << owner_name << " :: " << test_name << '\n';
+            std::cout << sstr.str();
         }
 
         /**
         * @brief print test result
         */
-        void result_print(bool success)
+        void result_print(bool success, detail::test_fail fail = {}) const noexcept
         {
             std::stringstream sstr;
-            sstr << (success ? "[SUCCESS] " : "[FAIL   ] ") << test_name << '\n';
+            if (success)
+                sstr << "[   PASS] " << owner_name << " :: " << test_name << '\n';
+            else
+                sstr << fail.msg;
+
             std::cout << sstr.str();
         }
 
         /**
         * @brief print error if a non-test_fail exception if thrown
         */
-        void error_print(const std::string& msg = std::string())
+        void error_print(const std::string& msg = std::string()) const noexcept
         {
             std::stringstream sstr;
             sstr << "[ERROR  ] test '" << test_name << "' threw an exception: " <<
@@ -782,6 +833,7 @@ namespace dough
         std::unordered_set<std::string> tag_set;
         std::function<void()> function = nullptr;
         std::string test_name;
+        std::string owner_name;
     };
 
     /**
@@ -790,6 +842,8 @@ namespace dough
     */
     class suite
     {
+        friend test;
+
     public:
         suite(std::string name) noexcept : suite_name(std::move(name)) {}
 
@@ -839,6 +893,7 @@ namespace dough
         suite& add(test new_test) noexcept
         {
             auto& ntst = test_list.emplace_back(std::move(new_test));
+            ntst.owner(suite_name);
 
             // inherit suite tags
             for (const auto& tag : tag_set)

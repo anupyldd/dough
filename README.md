@@ -107,7 +107,19 @@ int main()
 
 ```
 
-### Output
+### Output example
+
+```
+[  RUN  ] checks :: true
+[   PASS] checks :: true
+[  RUN  ] checks :: equal
+[FAIL   ] check_equal
+    File     : D:\Projects\dough\test\tests.cpp
+    Line     : 17
+    Expected : 1.100000024
+    Actual   : 1.200000048
+```
+
 
 
 

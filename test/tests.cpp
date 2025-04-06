@@ -14,14 +14,14 @@ int main()
         .add(
             test("equal")
             .func([&]() {
-                check_equal(1.0f, 1.0f, no_see);
+                check_equal(1.1f, 1.1f, no_see);
                 check_all_equal({ 1,1,1 }, 1, no_see);
                 })
         )
         .add(
             test("true")
             .func([&]() {
-                check_true(true, no_see);
+                check_true(false, no_see);
                 check_all_true({ true,true }, no_see);
                 })
         )
@@ -42,7 +42,7 @@ int main()
         .add(
             test("not null")
             .func([&]() {
-                check_not_null(&no_see, no_see);
+                check_not_null(nullptr, no_see);
                 check_all_not_null({ &no_see,&no_see }, no_see);
                 })
         )
