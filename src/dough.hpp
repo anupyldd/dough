@@ -62,11 +62,12 @@ namespace dough
             result << std::boolalpha;
             result.precision(10);
 
-            result << "[FAIL   ] " << check_type << '\n' <<
-                "    File     : " << std::string(location.file_name()) << '\n' <<
-                "    Line     : " << location.line() << '\n' <<
-                "    Expected : " << expected << '\n' <<
-                "    Actual   : " << actual << "\n\n";
+            result <<
+                "[FAIL ] Failed check : " << check_type << '\n' <<
+                "        File         : " << std::string(location.file_name()) << '\n' <<
+                "        Line         : " << location.line() << '\n' <<
+                "        Expected     : " << expected << '\n' <<
+                "        Actual       : " << actual << "\n\n";
 
             return result.str();
         }
@@ -100,7 +101,7 @@ namespace dough
         template<class T>
         void fail_print(const test_fail& fail)
         {
-            std::cerr << fail.msg;
+            std::cerr << "" << fail.msg;
         }
 
         /**
@@ -760,7 +761,7 @@ namespace dough
         /**
         * @brief run the test
         */
-        void run()
+        bool run()
         {
             if (function)
             {
@@ -769,20 +770,25 @@ namespace dough
                     start_print();
                     function();
                     result_print(true);
+                    return true;
                 }
                 catch (const detail::test_fail& f)
                 {
                     result_print(false, f);
+                    return false;
                 }
                 catch (const std::exception& e)
                 {
                     error_print(e.what());
+                    return false;
                 }
                 catch (...)
                 {
                     error_print();
+                    return false;
                 }
             }
+            return false;
         }
 
     private:
@@ -800,7 +806,7 @@ namespace dough
         void start_print() const noexcept
         {
             std::stringstream sstr;
-            sstr << "[  RUN  ] " << owner_name << " :: " << test_name << '\n';
+            sstr << "[RUN  ] " << owner_name << " :: " << test_name << '\n';
             std::cout << sstr.str();
         }
 
@@ -811,7 +817,7 @@ namespace dough
         {
             std::stringstream sstr;
             if (success)
-                sstr << "[   PASS] " << owner_name << " :: " << test_name << '\n';
+                sstr << "[PASS ] " << owner_name << " :: " << test_name << '\n';
             else
                 sstr << fail.msg;
 
@@ -824,7 +830,7 @@ namespace dough
         void error_print(const std::string& msg = std::string()) const noexcept
         {
             std::stringstream sstr;
-            sstr << "[ERROR  ] test '" << test_name << "' threw an exception: " <<
+            sstr << "[ERROR] Test '" << test_name << "' threw an exception: " <<
                 (msg.empty() ? "unknown exception" : msg) << '\n';
             std::cerr << sstr.str();
         }
@@ -927,13 +933,24 @@ namespace dough
         void run()
         {
             start_print();
+            stats st;
             for (auto& test : test_list)
             {
                 if (setup_function) setup_function();
-                test.run();
+                
+                if (test.run()) st.pass++;
+                else
+                {
+                    st.fail++;
+                    st.failed.push_back(test.name());
+                }
+                
                 if (teardown_function) teardown_function();
+
+                st.run++;
             }
-            finish_print();
+            //finish_print();
+            summary_print(st);
         }
 
         /**
@@ -960,6 +977,8 @@ namespace dough
             const include_tags& inc_tags,
             const exclude_tags& exc_tags = {})
         {
+            stats st;
+            start_print();
             for (auto& test : test_list)
             {
                 // skip test with excluded tag
@@ -969,11 +988,32 @@ namespace dough
                 if (inc_tags.set.empty() || detail::uset_have_common(test.tags(), inc_tags.set))
                 {
                     if (setup_function) setup_function();
-                    test.run();
+                    if (test.run()) st.pass++;
+                    else
+                    {
+                        st.fail++;
+                        st.failed.push_back(test.name());
+                    }
                     if (teardown_function) teardown_function();
+
+                    st.run++;
                 }
             }
+            summary_print(st);
         }
+
+    public:
+        /**
+        * @struct stats
+        * @brief holds stats for a suite run
+        */
+        struct stats
+        {
+            int run = 0,
+                pass = 0,
+                fail = 0;
+            std::vector<std::string> failed;
+        };
 
     private:
         /**
@@ -982,7 +1022,7 @@ namespace dough
         void start_print()
         {
             std::stringstream sstr;
-            sstr << "[SUITE  ] " << suite_name << " started" << '\n';
+            sstr << "[SUITE] " << suite_name << " started" << '\n';
             std::cout << sstr.str();
         }
 
@@ -993,6 +1033,28 @@ namespace dough
         {
             std::stringstream sstr;
             sstr << "[SUITE  ] " << suite_name << " finished" << '\n';
+            std::cout << sstr.str();
+        }
+
+        /**
+        * @brief prints suite run summary
+        */
+        void summary_print(const stats& st)
+        {
+            if (st.run == 0) return;
+
+            std::stringstream sstr;
+            sstr << "[=== SUITE " << suite_name << " ===]\n" <<
+                "    Run      : " << st.run << '\n' <<
+                "    Pass     : " << st.pass << '\n' <<
+                "    Fail     : " << st.fail << '\n';
+            if (st.fail > 0)
+            {
+                sstr << "    Failures : \n";
+                for (int i = 0; i < st.failed.size(); ++i)
+                    sstr << "     - " << st.failed[i] << (i == st.failed.size() - 1 ? "" : "\n");
+            }
+            sstr << '\n';
             std::cout << sstr.str();
         }
 

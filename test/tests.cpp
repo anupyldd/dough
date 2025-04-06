@@ -125,7 +125,7 @@ int main()
     
     reg.run(inc("func"));
 
-    std::cout << "--- should see 2 tests ---\n";
+    std::cout << "\n\n--- should see 2 tests ---\n";
     reg.run(inc("suite tag"));
     
     std::cout << "--- should see 1 test ---\n";
