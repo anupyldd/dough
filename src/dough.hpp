@@ -575,6 +575,52 @@ namespace dough
     }
 
     /**
+    * @struct include_tags
+    * @brief structure that holds tags to include
+    */
+    struct include_tags
+    {
+        std::unordered_set<std::string> set;
+    };
+
+    /**
+    * @struct exclude_tags
+    * @brief structure that holds tags to include
+    */
+    struct exclude_tags
+    {
+        std::unordered_set<std::string> set;
+    };
+
+    /**
+    * @brief helper function for including tags in filter
+    */
+    template<typename First, typename... Rest>
+        requires
+    (std::convertible_to<First, std::string> &&
+        (std::convertible_to<Rest, std::string> && ...))
+        include_tags inc(First&& first, Rest&&... rest)
+    {
+        include_tags tags;
+        detail::uset_insert(tags.set, std::forward<First>(first), std::forward<Rest>(rest)...);
+        return tags;
+    }
+
+    /**
+    * @brief helper function for excluding tags in filter
+    */
+    template<typename First, typename... Rest>
+        requires
+    (std::convertible_to<First, std::string> &&
+        (std::convertible_to<Rest, std::string> && ...))
+        exclude_tags exc(First&& first, Rest&&... rest)
+    {
+        exclude_tags tags;
+        detail::uset_insert(tags.set, std::forward<First>(first), std::forward<Rest>(rest)...);
+        return tags;
+    }
+
+    /**
     * @class test
     * @brief represents a single test
     */
@@ -761,16 +807,16 @@ namespace dough
         * @brief run test with tag filtering. test runs if at leas one of required tags is present. test is excluded by the same logic
         */
         void run(
-            const std::unordered_set<std::string>& included_tags,
-            const std::unordered_set<std::string>& excluded_tags = {})
+            const include_tags& inc_tags,
+            const exclude_tags& exc_tags = {})
         {
             for (auto& test : test_list)
             {
                 // skip test with excluded tag
-                if (detail::uset_have_common(test.tags(), excluded_tags)) continue;
+                if (detail::uset_have_common(test.tags(), exc_tags.set)) continue;
 
                 // run if has at least one required tag or if no include tags are specified
-                if (included_tags.empty() || detail::uset_have_common(test.tags(), included_tags))
+                if (inc_tags.set.empty() || detail::uset_have_common(test.tags(), inc_tags.set))
                 {
                     if (setup_function) setup_function();
                     test.run();
@@ -848,17 +894,17 @@ namespace dough
         * @brief run tests with filtering by tag
         */
         void run(
-            const std::unordered_set<std::string>& included_tags,
-            const std::unordered_set<std::string>& excluded_tags = {})
+            const include_tags& inc_tags,
+            const exclude_tags& exc_tags = {})
         {
             for (auto& st : suite_list)
             {
                 // skip suites with excluded tags
-                if (detail::uset_have_common(st.tags(), excluded_tags)) continue;
+                if (detail::uset_have_common(st.tags(), exc_tags.set)) continue;
 
                 // run suite if no included tags are specified or at least one suite tag satisfies the requirement
-                if (included_tags.empty() || detail::uset_have_common(st.tags(), included_tags))
-                    st.run(included_tags, excluded_tags);
+                if (inc_tags.set.empty() || detail::uset_have_common(st.tags(), inc_tags.set))
+                    st.run(inc_tags, exc_tags);
             }
         }
 

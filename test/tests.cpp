@@ -34,10 +34,11 @@ int main()
             .func([]() { check_not_null(nullptr, "test 4 fail"); })
         );
 
-    reg.run();
-    std::cout << "--------------------\n";
-    reg.run("suite 1");
-    std::cout << "--------------------\n";
-    reg.run("suite 1", "test 1");
-    
+    //reg.run();
+    //std::cout << "--------------------\n";
+    //reg.run("suite 1");
+    //std::cout << "--------------------\n";
+    //reg.run("suite 1", "test 1");
+    //std::cout << "--------------------\n";
+    reg.run(inc("tag 1"), exc("tag 3", "tag 4"));
 }
