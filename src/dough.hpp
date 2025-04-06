@@ -359,7 +359,7 @@ namespace dough
     /**
     * @brief callback that is called when a requirement fails. calls std::terminate() by default
     */
-    inline auto on_require_fail = [&]() { std::terminate(); };
+    inline std::function<void()> on_require_fail = [&]() { std::terminate(); };
 
     /************************************************************************************/
 
@@ -376,7 +376,8 @@ namespace dough
     {
         if (!check_equal<M, except_off>(first, second, message, location))
         {
-            on_require_fail();
+            if (on_require_fail) on_require_fail();
+            else std::terminate();
         }
     }
 
@@ -410,7 +411,8 @@ namespace dough
     {
         if (!check_true<M, except_off>(value, message, location))
         {
-            on_require_fail();
+            if (on_require_fail) on_require_fail();
+            else std::terminate();
         }
     }
 
@@ -442,7 +444,8 @@ namespace dough
     {
         if (!check_false<M, except_off>(value, message, location))
         {
-            on_require_fail();
+            if (on_require_fail) on_require_fail();
+            else std::terminate();
         }
     }
 
@@ -474,7 +477,8 @@ namespace dough
     {
         if (!check_null<M, except_off>(value, message, location))
         {
-            on_require_fail();
+            if (on_require_fail) on_require_fail();
+            else std::terminate();
         }
     }
 
@@ -506,7 +510,8 @@ namespace dough
     {
         if (!check_not_null<M, except_off>(value, message, location))
         {
-            on_require_fail();
+            if (on_require_fail) on_require_fail();
+            else std::terminate();
         }
     }
 
@@ -540,7 +545,8 @@ namespace dough
     {
         if (!check_near<M, except_off>(first, second, tolerance, message, location))
         {
-            on_require_fail();
+            if (on_require_fail) on_require_fail();
+            else std::terminate();
         }
     }
 

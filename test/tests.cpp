@@ -51,6 +51,52 @@ int main()
                 check_all_near({ 1.001f,1.0012f }, 1.0015f, 0.001f, no_see);
                 })
         );
+
+    on_require_fail = []() { };
+
+    reg.suite("requires")
+        .add(
+            test("equal")
+            .func([&]() {
+                require_equal(1.0f, 1.0f, no_see);
+                require_all_equal({ 1,1,1 }, 1, no_see);
+                })
+        )
+        .add(
+            test("true")
+            .func([&]() {
+                require_true(true, no_see);
+                require_all_true({ true,true }, no_see);
+                })
+        )
+        .add(
+            test("false")
+            .func([&]() {
+                require_false(false, no_see);
+                require_all_false({ false,false }, no_see);
+                })
+        )
+        .add(
+            test("null")
+            .func([&]() {
+                require_null(nullptr, no_see);
+                require_all_null({ nullptr,nullptr }, no_see);
+                })
+        )
+        .add(
+            test("not_null")
+            .func([&]() {
+                require_not_null(&no_see, no_see);
+                require_all_not_null({ &no_see,&no_see }, no_see);
+                })
+        )
+        .add(
+            test("near")
+            .func([&]() {
+                require_near(1.001f, 1.0015f, 0.001f, no_see);
+                require_all_near({ 1.001f,1.0012f }, 1.0015f, 0.001f, no_see);
+                })
+        );
     
     reg.run();
 }
