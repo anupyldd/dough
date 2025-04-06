@@ -750,6 +750,14 @@ namespace dough
 
     private:
         /**
+        * @brief prints test run start message
+        */
+        void start_print(const std::string& suite_name = {})
+        {
+
+        }
+
+        /**
         * @brief print test result
         */
         void result_print(bool success)
