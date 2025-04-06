@@ -861,12 +861,14 @@ namespace dough
         */
         void run()
         {
+            start_print();
             for (auto& test : test_list)
             {
                 if (setup_function) setup_function();
                 test.run();
                 if (teardown_function) teardown_function();
             }
+            finish_print();
         }
 
         /**
@@ -874,6 +876,7 @@ namespace dough
         */
         void run(std::string_view name)
         {
+            start_print();
             for (auto& test : test_list)
             {
                 if (test.name() == name)
@@ -884,6 +887,7 @@ namespace dough
                     return;
                 }
             }
+            finish_print();
         }
 
         /**
@@ -893,6 +897,7 @@ namespace dough
             const include_tags& inc_tags,
             const exclude_tags& exc_tags = {})
         {
+            start_print();
             for (auto& test : test_list)
             {
                 // skip test with excluded tag
@@ -906,6 +911,28 @@ namespace dough
                     if (teardown_function) teardown_function();
                 }
             }
+            finish_print();
+        }
+
+    private:
+        /**
+        * @brief print suite start message
+        */
+        void start_print()
+        {
+            std::stringstream sstr;
+            sstr << "[SUITE  ] " << suite_name << " started" << '\n';
+            std::cout << sstr.str();
+        }
+
+        /**
+        * @brief print suite start message
+        */
+        void finish_print()
+        {
+            std::stringstream sstr;
+            sstr << "[SUITE  ] " << suite_name << " finished" << '\n';
+            std::cout << sstr.str();
         }
 
     private:
