@@ -54,6 +54,19 @@ int main()
                 })
         );
 
+    reg.suite("io")
+        .tags("func")
+        .add(
+            test("output")
+            .func([]() {})
+        )
+        .add(
+            test("input")
+            .func([]() { throw 1; })
+        );
+
+    /*
+
     on_require_fail = []() { };
 
     reg.suite("requires")
@@ -123,14 +136,16 @@ int main()
             .func([&]() { })
         );
     
+    */
+
     reg.run(inc("func"));
 
-    std::cout << "\n\n--- should see 2 tests ---\n";
-    reg.run(inc("suite tag"));
-    
-    std::cout << "--- should see 1 test ---\n";
-    reg.run(inc("test tag"));
-
-    std::cout << "--- should see 3 test ---\n";
-    reg.run(inc(), exc("test tag 2", "func"));
+    //std::cout << "\n\n--- should see 2 tests ---\n";
+    //reg.run(inc("suite tag"));
+    //
+    //std::cout << "--- should see 1 test ---\n";
+    //reg.run(inc("test tag"));
+    //
+    //std::cout << "--- should see 3 test ---\n";
+    //reg.run(inc(), exc("test tag 2", "func"));
 }

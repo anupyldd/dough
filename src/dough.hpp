@@ -1046,7 +1046,7 @@ namespace dough
             if (st.run == 0) return;
 
             std::stringstream sstr;
-            sstr << "[=== SUITE: " << suite_name << " ===]\n" <<
+            sstr << "\n[=== SUITE: " << suite_name << " ===]\n" <<
                 "    Run      : " << st.run << '\n' <<
                 "    Pass     : " << st.pass << '\n' <<
                 "    Fail     : " << st.fail << '\n';
@@ -1056,7 +1056,7 @@ namespace dough
                 for (int i = 0; i < st.failed.size(); ++i)
                     sstr << "     - " << st.failed[i] << (i == st.failed.size() - 1 ? "" : "\n");
             }
-            sstr << '\n';
+            sstr << "\n\n";
             std::cout << sstr.str();
         }
 
@@ -1177,20 +1177,25 @@ namespace dough
 
                 for (int i = 0; i < stat.failed.size(); ++i)
                 {
-                    failed << "     - " << name << " :: " << stat.failed[i] <<
-                        (i == stat.failed.size() - 1 ? "" : "\n");
+                    failed << "     - " << name << " :: " << stat.failed[i] << '\n';
                 }
             }
 
             std::stringstream sstr;
-            sstr << "[===== SUMMARY =====]\n" <<
-                "    Run      : " << run << '\n' <<
-                "    Pass     : " << pass << '\n' <<
-                "    Fail     : " << fail << '\n';
+            sstr << "\n ---------------------------";
+            sstr << "\n[===== OVERALL SUMMARY =====]\n" <<
+                " ---------------------------\n" <<
+                "    Total    : " << run << '\n' <<
+                "    Passed   : " << pass << '\n' <<
+                "    Failed   : " << fail << '\n';
 
             if (fail > 0)
             {
-                sstr << "    Failures : \n" << failed.str();
+                sstr << "    Failures :\n" << failed.str();
+            }
+            else
+            {
+                sstr << "[DOUGH] All tests passed";
             }
 
             sstr << '\n';

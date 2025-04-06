@@ -109,15 +109,65 @@ int main()
 
 ### Output example
 
+*This is NOT the output from the example above, but a separate one.*
+
 ```
-[  RUN  ] checks :: true
-[   PASS] checks :: true
-[  RUN  ] checks :: equal
-[FAIL   ] check_equal
-    File     : D:\Projects\dough\test\tests.cpp
-    Line     : 17
-    Expected : 1.100000024
-    Actual   : 1.200000048
+[SUITE] checks started
+[RUN  ] checks :: equal
+[PASS ] checks :: equal
+[RUN  ] checks :: true
+[FAIL ] Failed check : check_true
+        File         : D:\Projects\dough\test\tests.cpp
+        Line         : 24
+        Expected     : true
+        Actual       : false
+
+[RUN  ] checks :: false
+[PASS ] checks :: false
+[RUN  ] checks :: null
+[PASS ] checks :: null
+[RUN  ] checks :: not null
+[FAIL ] Failed check : check_not_null
+        File         : D:\Projects\dough\test\tests.cpp
+        Line         : 45
+        Expected     : not null
+        Actual       : nullptr
+
+[RUN  ] checks :: near
+[PASS ] checks :: near
+
+[=== SUITE: checks ===]
+    Run      : 6
+    Pass     : 4
+    Fail     : 2
+    Failures :
+     - true
+     - not null
+
+[SUITE] io started
+[RUN  ] io :: output
+[PASS ] io :: output
+[RUN  ] io :: input
+[ERROR] Test 'input' threw an exception: unknown exception
+
+[=== SUITE: io ===]
+    Run      : 2
+    Pass     : 1
+    Fail     : 1
+    Failures :
+     - input
+
+
+ ---------------------------
+[===== OVERALL SUMMARY =====]
+ ---------------------------
+    Total    : 8
+    Passed   : 5
+    Failed   : 3
+    Failures :
+     - checks :: true
+     - checks :: not null
+     - io :: input
 ```
 
 
