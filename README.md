@@ -4,7 +4,9 @@
 
 ### Registry
 
-The main class of **dough** is a `registry`. It is a class for storing `test`s grouped into `suite`s. Each suite and test can have any number of tags, which can be used for filtering. Tests inherit the tags of the suite they belong to but can also have their own additional tags.
+- `registry` is a class for storing `test`s grouped into `suite`s;
+- `suite`s and `test`s can have tags assigned to them for filtering;
+- `test`s inherit the tags of the `suite` they belong to, and can have additional tags on top of them.
 
 To see how to use the registry, see the example below.
 
@@ -13,7 +15,7 @@ To see how to use the registry, see the example below.
 To check a value, use one of `check_` functions listed below.
 
 All checks have a `require_` version.
-- checks are non-blocking: on fail, they output an error message and throws an exception. You don't have to catch the exception unless you use checks outside `test` objects. You can manually disable exception throwing by passing `except_off` as a template parameter, but this may affect the accuracy of test evaluation.
+- checks are non-blocking: on fail, they output an error message and throws an exception. In tests these exceptions are handled automatically, but you should keep them in mind if you decide to use checks outside `test` objects. You can manually disable exception throwing by passing `except_off` as a template parameter (not recommended, unless you know what you're doing).
 - requires are blocking: on fail, they output an error message and call std::terminate(). You can modify this behaviour by providing your own `on_require_fail()` callback implementation.
 
 All checks and requires have a `check_all` / `require_all` version, which runs the same check but for a list of values instead of a single value.
@@ -103,6 +105,69 @@ int main()
     reg.run(inc("tag 1"), exc("tag 3", "tag 4"));
 }
 
+```
+
+### Output example
+
+*This is NOT the output from the example above, but a separate one.*
+
+```
+[SUITE] checks started
+[RUN  ] checks :: equal
+[PASS ] checks :: equal
+[RUN  ] checks :: true
+[FAIL ] Failed check : check_true
+        File         : D:\Projects\dough\test\tests.cpp
+        Line         : 24
+        Expected     : true
+        Actual       : false
+
+[RUN  ] checks :: false
+[PASS ] checks :: false
+[RUN  ] checks :: null
+[PASS ] checks :: null
+[RUN  ] checks :: not null
+[FAIL ] Failed check : check_not_null
+        File         : D:\Projects\dough\test\tests.cpp
+        Line         : 45
+        Expected     : not null
+        Actual       : nullptr
+
+[RUN  ] checks :: near
+[PASS ] checks :: near
+
+[=== SUITE: checks ===]
+    Run      : 6
+    Pass     : 4
+    Fail     : 2
+    Failures :
+     - true
+     - not null
+
+[SUITE] io started
+[RUN  ] io :: output
+[PASS ] io :: output
+[RUN  ] io :: input
+[ERROR] Test 'input' threw an exception: unknown exception
+
+[=== SUITE: io ===]
+    Run      : 2
+    Pass     : 1
+    Fail     : 1
+    Failures :
+     - input
+
+
+ ---------------------------
+[===== OVERALL SUMMARY =====]
+ ---------------------------
+    Total    : 8
+    Passed   : 5
+    Failed   : 3
+    Failures :
+     - checks :: true
+     - checks :: not null
+     - io :: input
 ```
 
 
