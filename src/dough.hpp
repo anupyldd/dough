@@ -575,6 +575,34 @@ namespace dough
     }
 
     /**
+    * @brief helper function for including tags in filter
+    */
+    template<typename First, typename... Rest>
+        requires
+    (std::convertible_to<First, std::string> &&
+        (std::convertible_to<Rest, std::string> && ...))
+        std::unordered_set<std::string> inc(First&& first, Rest&&... rest)
+    {
+        std::unordered_set<std::string> set;
+        detail::uset_insert(set, std::forward<First>(first), std::forward<Rest>(rest)...);
+        return set;
+    }
+
+    /**
+    * @brief helper function for excluding tags in filter
+    */
+    template<typename First, typename... Rest>
+        requires
+    (std::convertible_to<First, std::string> &&
+        (std::convertible_to<Rest, std::string> && ...))
+        std::unordered_set<std::string> exc(First&& first, Rest&&... rest)
+    {
+        std::unordered_set<std::string> set;
+        detail::uset_insert(set, std::forward<First>(first), std::forward<Rest>(rest)...);
+        return set;
+    }
+
+    /**
     * @class test
     * @brief represents a single test
     */

@@ -39,5 +39,6 @@ int main()
     reg.run("suite 1");
     std::cout << "--------------------\n";
     reg.run("suite 1", "test 1");
-    
+    std::cout << "--------------------\n";
+    reg.run(inc("tag 1"), exc("tag 3", "tag 4"));
 }
