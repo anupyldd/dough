@@ -851,6 +851,19 @@ namespace dough
         friend test;
 
     public:
+        /**
+        * @struct stats
+        * @brief holds stats for a suite run
+        */
+        struct stats
+        {
+            std::vector<std::string> failed;
+            int run = 0,
+                pass = 0,
+                fail = 0;
+        };
+
+    public:
         suite(std::string name) noexcept : suite_name(std::move(name)) {}
 
         /**
@@ -930,7 +943,7 @@ namespace dough
         /**
         * @brief run all tests in a suite
         */
-        void run()
+        stats run()
         {
             start_print();
             stats st;
@@ -951,6 +964,7 @@ namespace dough
             }
             //finish_print();
             summary_print(st);
+            return st;
         }
 
         /**
@@ -973,7 +987,7 @@ namespace dough
         /**
         * @brief run test with tag filtering. test runs if at leas one of required tags is present. test is excluded by the same logic
         */
-        void run(
+        stats run(
             const include_tags& inc_tags,
             const exclude_tags& exc_tags = {})
         {
@@ -1000,20 +1014,8 @@ namespace dough
                 }
             }
             summary_print(st);
+            return st;
         }
-
-    public:
-        /**
-        * @struct stats
-        * @brief holds stats for a suite run
-        */
-        struct stats
-        {
-            int run = 0,
-                pass = 0,
-                fail = 0;
-            std::vector<std::string> failed;
-        };
 
     private:
         /**
@@ -1044,7 +1046,7 @@ namespace dough
             if (st.run == 0) return;
 
             std::stringstream sstr;
-            sstr << "[=== SUITE " << suite_name << " ===]\n" <<
+            sstr << "[=== SUITE: " << suite_name << " ===]\n" <<
                 "    Run      : " << st.run << '\n' <<
                 "    Pass     : " << st.pass << '\n' <<
                 "    Fail     : " << st.fail << '\n';
@@ -1098,14 +1100,16 @@ namespace dough
         */
         void run(std::string_view suite_name)
         {
+            summary sum;
             for (auto& st : suite_list)
             {
                 if (st.name() == suite_name)
                 {
-                    st.run();
+                    sum.stats[st.name()] = st.run();
                     return;
                 }
             }
+            summary_print(sum);
         }
 
         /**
@@ -1130,13 +1134,67 @@ namespace dough
             const include_tags& inc_tags,
             const exclude_tags& exc_tags = {})
         {
+            summary sum;
             for (auto& st : suite_list)
             {
                 // skip suites with excluded tags
                 if (detail::uset_have_common(st.tags(), exc_tags.set)) continue;
 
-                st.run(inc_tags, exc_tags);
+                sum.stats[st.name()] = st.run(inc_tags, exc_tags);
             }
+            summary_print(sum);
+        }
+
+    private:
+        /**
+        * @struct summary
+        * @brief whole run summary
+        */
+        struct summary
+        {
+            std::unordered_map<std::string, suite::stats> stats;
+        };
+
+        /**
+        * @brief output whole summary
+        */
+        void summary_print(const summary& sum)
+        {
+            if (sum.stats.size() == 0) return;
+
+            int run = 0,
+                pass = 0,
+                fail = 0;
+            std::stringstream failed;
+
+            for (const auto& [name, stat] : sum.stats)
+            {
+                if (stat.run == 0) continue;
+
+                run += stat.run;
+                pass += stat.pass;
+                fail += stat.fail;
+
+                for (int i = 0; i < stat.failed.size(); ++i)
+                {
+                    failed << "     - " << name << " :: " << stat.failed[i] <<
+                        (i == stat.failed.size() - 1 ? "" : "\n");
+                }
+            }
+
+            std::stringstream sstr;
+            sstr << "[===== SUMMARY =====]\n" <<
+                "    Run      : " << run << '\n' <<
+                "    Pass     : " << pass << '\n' <<
+                "    Fail     : " << fail << '\n';
+
+            if (fail > 0)
+            {
+                sstr << "    Failures : \n" << failed.str();
+            }
+
+            sstr << '\n';
+            std::cout << sstr.str();
         }
 
     private:
