@@ -21,7 +21,7 @@ int main()
         .add(
             test("true")
             .func([&]() {
-                check_true(false, no_see);
+                check_true(false, "custom fail message");
                 check_all_true({ true,true }, no_see);
                 })
         )
@@ -42,7 +42,7 @@ int main()
         .add(
             test("not null")
             .func([&]() {
-                check_not_null(nullptr, no_see);
+                check_not_null(nullptr, "another custom message");
                 check_all_not_null({ &no_see,&no_see }, no_see);
                 })
         )
