@@ -4,12 +4,13 @@
 
 ### Registry
 
-- `registry` is a class for storing `test`s grouped into `suite`s;
-- `suite`s and `test`s can have tags assigned to them for filtering;
-- `test`s inherit the tags of the `suite` they belong to, and can have additional tags on top of them;
-- Tags cannot contain exclamation marks (`!`) or commas (`,`). They will be automatically replaced with an underscore (`_`).
+The `registry` stores all defined `suite`s and their associated `test`s.
+- Tests are grouped into suites.
+- Both suites and tests can be assigned **tags** for filtering.
+- Tests automatically inherit their suite’s tags, but can also define additional tags.
+- Tags cannot include exclamation marks (`!`) or commas (`,`); these characters are replaced with underscores (`_`).
 
-To see how to use the registry, see the example below.
+For usage example, see below.
 
 ### Functions
 
