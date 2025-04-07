@@ -121,6 +121,7 @@ int main()
         Line         : 24
         Expected     : true
         Actual       : false
+        Message      : custom fail message
 
 [RUN  ] checks :: false
 [PASS ] checks :: false
@@ -132,6 +133,7 @@ int main()
         Line         : 45
         Expected     : not null
         Actual       : nullptr
+        Message      : another custom message
 
 [RUN  ] checks :: near
 [PASS ] checks :: near

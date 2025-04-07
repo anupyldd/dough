@@ -67,7 +67,8 @@ namespace dough
                 "        File         : " << std::string(location.file_name()) << '\n' <<
                 "        Line         : " << location.line() << '\n' <<
                 "        Expected     : " << expected << '\n' <<
-                "        Actual       : " << actual << "\n\n";
+                "        Actual       : " << actual << '\n' <<
+                "        Message      : " << message << "\n\n";
 
             return result.str();
         }
