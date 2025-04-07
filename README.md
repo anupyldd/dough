@@ -6,7 +6,8 @@
 
 - `registry` is a class for storing `test`s grouped into `suite`s;
 - `suite`s and `test`s can have tags assigned to them for filtering;
-- `test`s inherit the tags of the `suite` they belong to, and can have additional tags on top of them.
+- `test`s inherit the tags of the `suite` they belong to, and can have additional tags on top of them;
+- Tags cannot contain exclamation marks (`!`) or commas (`,`). They will be automatically replaced with an underscore (`_`).
 
 To see how to use the registry, see the example below.
 

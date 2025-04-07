@@ -1,14 +1,16 @@
 #pragma once
 
-#include <string>
-#include <sstream>
-#include <source_location>
-#include <iostream>
+#include <algorithm>
+#include <array>
+#include <exception>
 #include <format>
 #include <functional>
-#include <unordered_set>
-#include <exception>
 #include <initializer_list>
+#include <iostream>
+#include <source_location>
+#include <sstream>
+#include <string>
+#include <unordered_set>
 
 /**
 * @brief main dough namespace
@@ -607,6 +609,29 @@ namespace dough
     namespace detail
     {
         /**
+        * @brief array of reserved characters
+        */
+        const std::array<char, 2> reserved_chars{ '!', ',' };
+        /**
+        * @brief char with which reserved chars are replaced
+        */
+        const char replace_char = '_';
+
+        /**
+        * @brief replaces reserved characters from string
+        */
+        template <typename S>
+        std::string sanitize_tag(S&& tag) 
+        {
+            std::string str = std::forward<S>(tag);
+            for (char c : reserved_chars) 
+            {
+                std::replace(str.begin(), str.end(), c, replace_char);
+            }
+            return str;
+        }
+
+        /**
         * @brief find unordered set intersection
         */
         std::unordered_set<std::string> uset_intersection(
@@ -643,9 +668,9 @@ namespace dough
         * @brief insert arbitrary number of values into uset
         */
         template<class T, class... Args>
-        void uset_insert(std::unordered_set<T>& set, Args&&... args)
+        void uset_insert(std::unordered_set<T>& set, Args... args) 
         {
-            (set.insert(std::forward<Args>(args)), ...);
+            (set.insert(args), ...);
         }
     }
 
@@ -674,10 +699,10 @@ namespace dough
         requires
     (std::convertible_to<First, std::string> &&
         (std::convertible_to<Rest, std::string> && ...))
-        include_tags inc(First&& first, Rest&&... rest)
+        include_tags inc(const First& first, const Rest&... rest)
     {
         include_tags tags;
-        detail::uset_insert(tags.set, std::forward<First>(first), std::forward<Rest>(rest)...);
+        detail::uset_insert(tags.set, first, rest...);
         return tags;
     }
     include_tags inc() { return include_tags(); }
@@ -689,10 +714,10 @@ namespace dough
         requires
     (std::convertible_to<First, std::string> &&
         (std::convertible_to<Rest, std::string> && ...))
-        exclude_tags exc(First&& first, Rest&&... rest)
+        exclude_tags exc(const First& first, const Rest&... rest)
     {
         exclude_tags tags;
-        detail::uset_insert(tags.set, std::forward<First>(first), std::forward<Rest>(rest)...);
+        detail::uset_insert(tags.set, first, rest...);
         return tags;
     }
     exclude_tags exc() { return exclude_tags(); }
@@ -730,7 +755,7 @@ namespace dough
         (std::convertible_to<Rest, std::string> && ...))
             test& tags(First&& first, Rest&&... rest) noexcept
         {
-            detail::uset_insert(tag_set, std::forward<First>(first), std::forward<Rest>(rest)...);
+            detail::uset_insert(tag_set, detail::sanitize_tag(first), detail::sanitize_tag(rest)...);
             return *this;
         }
 
@@ -894,7 +919,7 @@ namespace dough
         (std::convertible_to<Rest, std::string> && ...))
             suite& tags(First&& first, Rest&&... rest) noexcept
         {
-            detail::uset_insert(tag_set, std::forward<First>(first), std::forward<Rest>(rest)...);
+            detail::uset_insert(tag_set, detail::sanitize_tag(first), detail::sanitize_tag(rest)...);
             for (auto& test : test_list) test.tags(first, rest...);
             return *this;
         }
@@ -963,7 +988,6 @@ namespace dough
 
                 st.run++;
             }
-            //finish_print();
             summary_print(st);
             return st;
         }
@@ -1196,7 +1220,7 @@ namespace dough
             }
             else
             {
-                sstr << "[DOUGH] All tests passed";
+                if (run > 0) sstr << "[DOUGH] All tests passed";
             }
 
             sstr << '\n';

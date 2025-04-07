@@ -113,8 +113,10 @@ int main()
                 require_all_near({ 1.001f,1.0012f }, 1.0015f, 0.001f, no_see);
                 })
         );
+        */
 
-    reg.suite("filter (no tags)")
+    reg.suite("filter")
+        .tags("!test,")
         .add(
             test("no tags 1")
             .func([&]() { })
@@ -132,13 +134,13 @@ int main()
         )
         .add(
             test("own tags")
-            .tags("test tag", "test tag 2")
+            .tags("!test,", "test tag 2")
             .func([&]() { })
         );
     
-    */
+    
 
-    reg.run(inc("func"));
+    reg.run(inc("_test_"));
 
     //std::cout << "\n\n--- should see 2 tests ---\n";
     //reg.run(inc("suite tag"));
