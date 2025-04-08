@@ -7,10 +7,12 @@
 #include <functional>
 #include <initializer_list>
 #include <iostream>
+#include <optional>
 #include <source_location>
 #include <sstream>
 #include <string>
 #include <unordered_set>
+#include <unordered_map>
 
 /**
 * @brief main dough namespace
@@ -1093,6 +1095,171 @@ namespace dough
         std::vector<test> test_list;
     };
 
+    namespace detail
+    {
+        /**
+        * @brief message that is printed on help command
+        */
+        const char* help_message =
+            "Print help\n"
+            "./tests --help\n"
+            "./tests -h\n"
+            "\n"
+            "Run all tests\n"
+            "./tests \n"
+            "\n"
+            "Run specific suites \n"
+            "(comma-separated, spaces around commas are ignored)\n"
+            "./tests --suites=\"database, math vec\"\n"
+            "./tests -s \"database, math vec\"\n"
+            "\n"
+            "Filter by tags (exclude with '!')\n"
+            "./tests --tags=\"fast, !network\"\n"
+            "./tests -t \"fast, !network\"\n"
+            "\n"
+            "List all available tags\n"
+            "./tests --list\n"
+            "./tests -l\n"
+            "\n"
+            "Combine to apply filter to specific suites\n"
+            "./tests --suites=\"database\" --tags=\"!fast\"\n"
+            "\n"
+            "If a command to run tests is combined with --help or --list,\n"
+            "the latter takes priority. E.g., here only the help will be \n"
+            "prined, but no tests will run\n"
+            "./tests --all --help\n"
+            "\n"
+            "If both --help and --list are used, the first command listed\n"
+            "takes priority. Here, only --list will be executed\n"
+            "./tests --list --help\n";
+
+        /**
+        * @struct cli_command
+        * @brief parsed cli command
+        */
+        struct cli_command
+        {
+            std::unordered_set<std::string> inc_tags;
+            std::unordered_set<std::string> exc_tags;
+            std::string error_msg;
+            std::vector<std::string> suites;
+            bool list = false;
+            bool help = false;
+            bool run_all = false;
+        };
+
+        /**
+        * @brief format cli error
+        */
+        std::string cli_error_format(const std::string& str)
+        {
+            return std::format("[CLI  ] Error: {}", str);
+        }
+
+        /**
+        * @brief parse suites
+        */
+        void cli_parse_suites(cli_command& cmd, const std::string& value)
+        {
+
+        }
+
+        /**
+        * @brief parse tags
+        */
+        void cli_parse_tags(cli_command& cmd, const std::string& value)
+        {
+
+        }
+
+        /**
+        * @brief parses cl args into a command
+        */
+        cli_command cli_parse(int argc, char** argv)
+        {
+            cli_command command;
+            std::vector<std::string> arguments(argv + 1, argv + argc);
+            size_t arg_size = arguments.size();
+
+            auto get_value = [&](const std::string& arg) -> std::optional<std::string>
+                {
+                    auto ind = arg.find('=');
+                    if (ind == arg.npos)
+                    {
+                        command.error_msg = cli_error_format(
+                            std::format("missing '=' when passing values in '{}'", arg));
+                        return std::nullopt;
+                    }
+                    return arg.substr(ind + 1);
+                };
+
+            if (arg_size == 0)
+            {
+                command.run_all = true;
+                return command; // run all if no args passed
+            }
+
+            for (size_t i = 0; i < arg_size; ++i)
+            {
+                if (arguments[i] == "-h" || arguments[i] == "--help")
+                {
+                    command.help = true;
+                    return command; // help overrides all other args
+                }
+
+                else if (arguments[i] == "-l" || arguments[i] == "--list")
+                {
+                    command.list = true;
+                    return command; // list also overrides if is first
+                }
+
+                else if (arguments[i] == "-s")
+                {
+                    if (i == arg_size - 1)
+                    {
+                        command.error_msg = cli_error_format("missing argument after '-s'");
+                        return command; // no reason to parse after the error
+                    }
+                    // pass the next arg since they are delim'ed by space: -s "suite"
+                    cli_parse_suites(command, arguments[++i]);
+                }
+                else if (arguments[i].starts_with("--suites"))
+                {
+                    // get value from the same arg
+                    auto value = get_value(arguments[i]);
+                    if (value) cli_parse_suites(command, value.value());
+                    else return command; // return with error from get_value
+                }
+
+                else if (arguments[i] == "-t")
+                {
+                    if (i == arg_size - 1)
+                    {
+                        command.error_msg = cli_error_format("missing argument after '-t'");
+                        return command; // no reason to parse after the error
+                    }
+                    cli_parse_tags(command, arguments[++i]);
+                }
+                else if (arguments[i].starts_with("--tags"))
+                {
+                    // get value from the same arg
+                    auto value = get_value(arguments[i]);
+                    if (value) cli_parse_tags(command, value.value());
+                    else return command; // return with error from get_value
+                }
+
+                else
+                {
+                    command.error_msg = cli_error_format(
+                        std::format("unknown argument {}", arguments[i]));
+                    return command;
+                }
+            }
+
+            return command;
+        }
+    }
+
     /**
     * @class registry
     * @brief class that stores and runs tests, either individually or all at once
@@ -1168,6 +1335,36 @@ namespace dough
                 sum.stats[st.name()] = st.run(inc_tags, exc_tags);
             }
             summary_print(sum);
+        }
+
+        /**
+        * @brief run based on command line arguments
+        */
+        void run(int argc, char** argv)
+        {
+            auto cmd = detail::cli_parse(argc, argv);
+            /*
+            std::cout << std::boolalpha <<
+                cmd.error_msg << '\n' <<
+                cmd.help << '\n' <<
+                cmd.run_all << '\n' <<
+                cmd.list << '\n' <<
+                cmd.suites.size() << '\n' <<
+                cmd.inc_tags.size() << '\n' <<
+                cmd.exc_tags.size() << '\n';
+            */
+
+            if (!cmd.error_msg.empty())
+            {
+                std::cerr << cmd.error_msg << '\n';
+                return;
+            }
+
+            if (cmd.help)
+            {
+                std::cout << detail::help_message << '\n';
+                return;
+            }
         }
 
     private:

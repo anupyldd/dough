@@ -32,6 +32,50 @@ By default, checks and requires output messages on fail. You can disable this by
 - `check_null` - checks if the value is nullptr;
 - `check_not_null` - checks if the value is not nullptr;
 - `check_near` - checks if two values are within specified tolerance of each other.
+
+### CLI
+
+Command-line interface:
+
+- `--help` / `-h` - print help
+- `--suites` / `-s` - run specific suites
+- `--tags` / `-t` - filter by tags
+- `--list` / `-l` - print the list of all registered tests
+
+```bash
+# Print help
+./tests --help
+./tests -h
+
+# Run all tests
+./tests 
+
+# Run specific suites 
+#(comma-separated, spaces around commas are ignored)
+./tests --suites="database,math vec"
+./tests -s "database,math vec"
+
+# Filter by tags (exclude with '!')
+./tests --tags="fast,!network"
+./tests -t "fast,!network"
+
+# List all available tags
+./tests --list
+./tests -l
+
+# Combine to apply filter to specific suites
+./tests --suites="database" --tags="!fast"
+
+# If a command to run tests is combined with --help or --list,
+# the latter takes priority. E.g., here only the help will be 
+# prined, but no tests will run
+./tests --all --help
+
+# If both --help and --list are used, the first command listed
+# takes priority. Here, only --list will be executed
+./tests --list --help
+
+```
     
 ### Example
 

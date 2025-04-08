@@ -1,9 +1,9 @@
 #include "../src/dough.hpp"
 
-int main()
+int main(int argc, char** argv)
 {
     using namespace dough;
-
+    
     const std::string see{ "should see this" };
     const std::string no_see{ "should NOT see this" };
 
@@ -114,7 +114,7 @@ int main()
                 })
         );
         */
-
+    
     reg.suite("filter")
         .tags("!test,")
         .add(
@@ -140,7 +140,7 @@ int main()
     
     
 
-    reg.run(inc("_test_"));
+    reg.run(argc, argv);
 
     //std::cout << "\n\n--- should see 2 tests ---\n";
     //reg.run(inc("suite tag"));
