@@ -1256,6 +1256,12 @@ namespace dough
                     else return command; // return with error from get_value
                 }
 
+                else if (arguments[i] == "-a" || arguments[i] == "--all")
+                {
+                    command.run_all = true;
+                    // no return to get exclude tags
+                }
+
                 else
                 {
                     command.error_msg = cli_error_format(
@@ -1328,7 +1334,7 @@ namespace dough
         }
 
         /**
-        * @brief run tests with filtering by tag
+        * @brief run tests with filtering by tag, exclude optional
         */
         void run(
             const include_tags& inc_tags,
@@ -1343,6 +1349,16 @@ namespace dough
                 sum.stats[st.name()] = st.run(inc_tags, exc_tags);
             }
             summary_print(sum);
+        }
+
+        /**
+        * @brief run tests with filtering by tag, include optional
+        */
+        void run(
+            const exclude_tags& exc_tags,
+            const include_tags& inc_tags = {})
+        {
+            run(inc_tags, exc_tags);
         }
 
         /**
@@ -1378,6 +1394,11 @@ namespace dough
             {
                 list_print();
                 return;
+            }
+
+            if (cmd.run_all)
+            {
+                run(exclude_tags{ cmd.exc_tags });
             }
         }
 
