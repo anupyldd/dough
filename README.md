@@ -8,7 +8,7 @@ The `registry` stores all defined `suite`s and their associated `test`s.
 - Tests are grouped into suites.
 - Both suites and tests can be assigned **tags** for filtering.
 - Tests automatically inherit their suite’s tags, but can also define additional tags.
-- Tags cannot include exclamation marks (`!`) or commas (`,`); these characters are replaced with underscores (`_`).
+- Tags or suite names cannot include exclamation marks (`!`) or commas (`,`); these characters are replaced with underscores (`_`).
 
 For usage example, see below.
 
@@ -47,8 +47,10 @@ Command-line interface:
 ./tests --help
 ./tests -h
 
-# Run all tests
+# Run all tests. Any include tags are ignored
 ./tests 
+./tests -a
+./tests --all
 
 # Run specific suites 
 #(comma-separated, spaces around commas are ignored)

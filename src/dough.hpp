@@ -1110,36 +1110,64 @@ namespace dough
         */
         const char* help_message =
             "Print help\n"
-            "./tests --help\n"
-            "./tests -h\n"
+            "    ./tests --help\n"
+            "    ./tests -h\n"
             "\n"
-            "Run all tests\n"
-            "./tests \n"
+            "Run all tests. Any include tags are ignored\n"
+            "    ./tests -a\n"
+            "    ./tests --all\n"
             "\n"
             "Run specific suites \n"
             "(comma-separated, spaces around commas are ignored)\n"
-            "./tests --suites=\"database, math vec\"\n"
-            "./tests -s \"database, math vec\"\n"
+            "    ./tests --suites=\"database, math vec\"\n"
+            "    ./tests -s \"database, math vec\"\n"
             "\n"
             "Filter by tags (exclude with '!')\n"
-            "./tests --tags=\"fast, !network\"\n"
-            "./tests -t \"fast, !network\"\n"
+            "    ./tests --tags=\"fast, !network\"\n"
+            "    ./tests -t \"fast, !network\"\n"
             "\n"
             "List all available tags\n"
-            "./tests --list\n"
-            "./tests -l\n"
+            "    ./tests --list\n"
+            "    ./tests -l\n"
             "\n"
             "Combine to apply filter to specific suites\n"
-            "./tests --suites=\"database\" --tags=\"!fast\"\n"
+            "    ./tests --suites=\"database\" --tags=\"!fast\"\n"
             "\n"
             "If a command to run tests is combined with --help or --list,\n"
             "the latter takes priority. E.g., here only the help will be \n"
             "prined, but no tests will run\n"
-            "./tests --all --help\n"
+            "    ./tests --all --help\n"
             "\n"
             "If both --help and --list are used, the first command listed\n"
             "takes priority. Here, only --list will be executed\n"
-            "./tests --list --help\n";
+            "    ./tests --list --help\n";
+
+        /**
+        * @brief trim string from the left
+        */
+        inline void trim_l(std::string& s) 
+        {
+            s.erase(s.begin(), std::find_if(s.begin(), s.end(), 
+                [](unsigned char ch) { return !std::isspace(ch); }));
+        }
+
+        /**
+        * @brief trim string from the right
+        */
+        inline void trim_r(std::string& s)
+        {
+            s.erase(std::find_if(s.rbegin(), s.rend(), 
+                [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
+        }
+
+        /**
+        * @brief trim string from both sides
+        */
+        inline void trim(std::string& s) 
+        {
+            trim_l(s);
+            trim_r(s);
+        }
 
         /**
         * @struct cli_command
@@ -1169,7 +1197,14 @@ namespace dough
         */
         void cli_parse_suites(cli_command& cmd, const std::string& value)
         {
-
+            std::vector<std::string> suites;
+            std::stringstream sstr(value);
+            std::string part;
+            while (std::getline(sstr, part, ','))
+            {
+                trim(part);
+                cmd.suites.push_back(part);
+            }
         }
 
         /**
@@ -1286,7 +1321,7 @@ namespace dough
         */
         dough::suite& suite(std::string name) noexcept
         {
-            auto& ns = suite_list.emplace_back(name);
+            auto& ns = suite_list.emplace_back(detail::sanitize_tag(name));
             return ns;
         }
 
@@ -1362,6 +1397,27 @@ namespace dough
         }
 
         /**
+        * @brief run tests of a specific suite with filtering by tag
+        */
+        void run(
+            const std::string& suite_name,
+            const include_tags& inc_tags = {},
+            const exclude_tags& exc_tags = {})
+        {
+            summary sum;
+            for (auto& st : suite_list)
+            {
+                if (st.name() != suite_name) continue;
+
+                // skip suites with excluded tags
+                if (detail::uset_have_common(st.tags(), exc_tags.set)) continue;
+
+                sum.stats[st.name()] = st.run(inc_tags, exc_tags);
+            }
+            summary_print(sum);
+        }
+
+        /**
         * @brief run based on command line arguments
         */
         void run(int argc, char** argv)
@@ -1399,6 +1455,16 @@ namespace dough
             if (cmd.run_all)
             {
                 run(exclude_tags{ cmd.exc_tags });
+            }
+
+            if (!cmd.suites.empty())
+            {
+                for (const auto& s : cmd.suites)
+                {
+                    run(s,
+                        include_tags{ cmd.inc_tags },
+                        exclude_tags{ cmd.exc_tags });
+                }
             }
         }
 
