@@ -969,6 +969,14 @@ namespace dough
         }
 
         /**
+        * @brief get list of tests
+        */
+        const std::vector<test>& tests() const noexcept
+        {
+            return test_list;
+        }
+
+        /**
         * @brief run all tests in a suite
         */
         stats run()
@@ -1365,6 +1373,12 @@ namespace dough
                 std::cout << detail::help_message << '\n';
                 return;
             }
+
+            if (cmd.list)
+            {
+                list_print();
+                return;
+            }
         }
 
     private:
@@ -1422,6 +1436,53 @@ namespace dough
 
             sstr << '\n';
             std::cout << sstr.str();
+        }
+
+        /**
+        * @brief prints a list of all registeret tests
+        */
+        void list_print()
+        {
+            for (const auto& st : suite_list)
+            {
+                // - suite name [ tag1, tag2 ]
+                std::cout << "\n- " << st.name();
+                if (st.tags().size() > 0)
+                {
+                    std::cout << " [ ";
+                    for (auto it = st.tags().begin(); it != st.tags().end(); ++it)
+                    {
+                        std::cout << (*it) << 
+                            (it != (--st.tags().end()) ? ", " : "");
+                    }
+                    std::cout << " ]";
+                }
+                std::cout << '\n';
+
+                const auto tab = "    ";
+                if (st.tests().empty())
+                {
+                    std::cout << tab << "*no registered tests*";
+                }
+                else
+                {
+                    for (const auto& tst : st.tests())
+                    {
+                        std::cout << tab << "- " << tst.name();
+                        if (tst.tags().size() > 0)
+                        {
+                            std::cout << " [ ";
+                            for (auto it = tst.tags().begin(); it != tst.tags().end(); ++it)
+                            {
+                                std::cout << (*it) <<
+                                    (it != (--tst.tags().end()) ? ", " : "");
+                            }
+                            std::cout << " ]";
+                        }
+                        std::cout << '\n';
+                    }
+                }
+            }
         }
 
     private:

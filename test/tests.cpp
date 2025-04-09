@@ -116,9 +116,10 @@ int main(int argc, char** argv)
         */
     
     reg.suite("filter")
-        .tags("!test,")
+        .tags("!test,","what ever space")
         .add(
             test("no tags 1")
+            .tags("a", "b")
             .func([&]() { })
         )
         .add(
