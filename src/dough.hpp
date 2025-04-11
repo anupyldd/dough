@@ -1212,7 +1212,15 @@ namespace dough
         */
         void cli_parse_tags(cli_command& cmd, const std::string& value)
         {
-
+            std::vector<std::string> suites;
+            std::stringstream sstr(value);
+            std::string part;
+            while (std::getline(sstr, part, ','))
+            {
+                trim(part);
+                if (part.starts_with('!')) cmd.exc_tags.insert(part);
+                else cmd.inc_tags.insert(part);
+            }
         }
 
         /**
@@ -1423,16 +1431,18 @@ namespace dough
         void run(int argc, char** argv)
         {
             auto cmd = detail::cli_parse(argc, argv);
-            /*
-            std::cout << std::boolalpha <<
-                cmd.error_msg << '\n' <<
-                cmd.help << '\n' <<
-                cmd.run_all << '\n' <<
-                cmd.list << '\n' <<
-                cmd.suites.size() << '\n' <<
-                cmd.inc_tags.size() << '\n' <<
-                cmd.exc_tags.size() << '\n';
-            */
+            
+            //std::cout << std::boolalpha <<
+            //    cmd.error_msg << '\n' <<
+            //    cmd.help << '\n' <<
+            //    cmd.run_all << '\n' <<
+            //    cmd.list << '\n' <<
+            //    cmd.suites.size() << '\n' <<
+            //    cmd.inc_tags.size();
+            //for (auto& e : cmd.inc_tags) std::cout << ' ' << e;
+            //std::cout << '\n' <<
+            //    cmd.exc_tags.size() << '\n';
+            
 
             if (!cmd.error_msg.empty())
             {
@@ -1455,6 +1465,7 @@ namespace dough
             if (cmd.run_all)
             {
                 run(exclude_tags{ cmd.exc_tags });
+                return;
             }
 
             if (!cmd.suites.empty())
@@ -1465,6 +1476,11 @@ namespace dough
                         include_tags{ cmd.inc_tags },
                         exclude_tags{ cmd.exc_tags });
                 }
+            }
+            else
+            {
+                run(include_tags{ cmd.inc_tags },
+                    exclude_tags{ cmd.exc_tags });
             }
         }
 
@@ -1569,7 +1585,9 @@ namespace dough
                         std::cout << '\n';
                     }
                 }
+
             }
+            std::cout << '\n';
         }
 
     private:
