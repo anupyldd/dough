@@ -86,7 +86,7 @@ Command-line interface:
 
 #include "dough.hpp"
 
-int main()
+int main(int argc, char** argv)
 {
     using namespace dough;
 
@@ -152,6 +152,8 @@ int main()
     // if inc() is empty, all tests will be run, unless they are skipped
     // here, only 'test 2' from 'suite 1' will run
     reg.run(inc("tag 1"), exc("tag 3", "tag 4"));
+    // run tests based on command line arguments
+    reg.run(argc, argv);
 }
 
 ```
