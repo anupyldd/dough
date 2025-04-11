@@ -38,6 +38,7 @@ By default, checks and requires output messages on fail. You can disable this by
 Command-line interface:
 
 - `--help` / `-h` - print help
+- `--all` / `-a` / `no arg` - run all tests
 - `--suites` / `-s` - run specific suites
 - `--tags` / `-t` - filter by tags
 - `--list` / `-l` - print the list of all registered tests
