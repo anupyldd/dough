@@ -1114,6 +1114,7 @@ namespace dough
             "    ./tests -h\n"
             "\n"
             "Run all tests. Any include tags are ignored\n"
+            "    ./tests\n"
             "    ./tests -a\n"
             "    ./tests --all\n"
             "\n"
