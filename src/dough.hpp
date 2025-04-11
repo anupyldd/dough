@@ -1219,7 +1219,7 @@ namespace dough
             while (std::getline(sstr, part, ','))
             {
                 trim(part);
-                if (part.starts_with('!')) cmd.exc_tags.insert(part);
+                if (part.starts_with('!')) cmd.exc_tags.insert(part.substr(1));
                 else cmd.inc_tags.insert(part);
             }
         }
@@ -1433,16 +1433,19 @@ namespace dough
         {
             auto cmd = detail::cli_parse(argc, argv);
             
-            //std::cout << std::boolalpha <<
-            //    cmd.error_msg << '\n' <<
-            //    cmd.help << '\n' <<
-            //    cmd.run_all << '\n' <<
-            //    cmd.list << '\n' <<
-            //    cmd.suites.size() << '\n' <<
-            //    cmd.inc_tags.size();
-            //for (auto& e : cmd.inc_tags) std::cout << ' ' << e;
-            //std::cout << '\n' <<
-            //    cmd.exc_tags.size() << '\n';
+            std::cout << std::boolalpha <<
+                cmd.error_msg << '\n' <<
+                cmd.help << '\n' <<
+                cmd.run_all << '\n' <<
+                cmd.list << '\n' <<
+                cmd.suites.size() << '\n' <<
+                cmd.inc_tags.size();
+            std::cout << "inc:\n";
+            for (auto& e : cmd.inc_tags) std::cout << ' ' << e;
+            std::cout << "\nexc:\n";
+            for (auto& e : cmd.exc_tags) std::cout << ' ' << e;
+            std::cout << '\n' <<
+                cmd.exc_tags.size() << '\n';
             
 
             if (!cmd.error_msg.empty())
