@@ -1,14 +1,18 @@
 #pragma once
 
-#include <string>
-#include <sstream>
-#include <source_location>
-#include <iostream>
+#include <algorithm>
+#include <array>
+#include <exception>
 #include <format>
 #include <functional>
-#include <unordered_set>
-#include <exception>
 #include <initializer_list>
+#include <iostream>
+#include <optional>
+#include <source_location>
+#include <sstream>
+#include <string>
+#include <unordered_set>
+#include <unordered_map>
 
 /**
 * @brief main dough namespace
@@ -607,6 +611,29 @@ namespace dough
     namespace detail
     {
         /**
+        * @brief array of reserved characters
+        */
+        const std::array<char, 2> reserved_chars{ '!', ',' };
+        /**
+        * @brief char with which reserved chars are replaced
+        */
+        const char replace_char = '_';
+
+        /**
+        * @brief replaces reserved characters from string
+        */
+        template <typename S>
+        std::string sanitize_tag(S&& tag) 
+        {
+            std::string str = std::forward<S>(tag);
+            for (char c : reserved_chars) 
+            {
+                std::replace(str.begin(), str.end(), c, replace_char);
+            }
+            return str;
+        }
+
+        /**
         * @brief find unordered set intersection
         */
         std::unordered_set<std::string> uset_intersection(
@@ -643,9 +670,9 @@ namespace dough
         * @brief insert arbitrary number of values into uset
         */
         template<class T, class... Args>
-        void uset_insert(std::unordered_set<T>& set, Args&&... args)
+        void uset_insert(std::unordered_set<T>& set, Args... args) 
         {
-            (set.insert(std::forward<Args>(args)), ...);
+            (set.insert(args), ...);
         }
     }
 
@@ -674,10 +701,10 @@ namespace dough
         requires
     (std::convertible_to<First, std::string> &&
         (std::convertible_to<Rest, std::string> && ...))
-        include_tags inc(First&& first, Rest&&... rest)
+        include_tags inc(const First& first, const Rest&... rest)
     {
         include_tags tags;
-        detail::uset_insert(tags.set, std::forward<First>(first), std::forward<Rest>(rest)...);
+        detail::uset_insert(tags.set, first, rest...);
         return tags;
     }
     include_tags inc() { return include_tags(); }
@@ -689,10 +716,10 @@ namespace dough
         requires
     (std::convertible_to<First, std::string> &&
         (std::convertible_to<Rest, std::string> && ...))
-        exclude_tags exc(First&& first, Rest&&... rest)
+        exclude_tags exc(const First& first, const Rest&... rest)
     {
         exclude_tags tags;
-        detail::uset_insert(tags.set, std::forward<First>(first), std::forward<Rest>(rest)...);
+        detail::uset_insert(tags.set, first, rest...);
         return tags;
     }
     exclude_tags exc() { return exclude_tags(); }
@@ -730,7 +757,7 @@ namespace dough
         (std::convertible_to<Rest, std::string> && ...))
             test& tags(First&& first, Rest&&... rest) noexcept
         {
-            detail::uset_insert(tag_set, std::forward<First>(first), std::forward<Rest>(rest)...);
+            detail::uset_insert(tag_set, detail::sanitize_tag(first), detail::sanitize_tag(rest)...);
             return *this;
         }
 
@@ -894,7 +921,7 @@ namespace dough
         (std::convertible_to<Rest, std::string> && ...))
             suite& tags(First&& first, Rest&&... rest) noexcept
         {
-            detail::uset_insert(tag_set, std::forward<First>(first), std::forward<Rest>(rest)...);
+            detail::uset_insert(tag_set, detail::sanitize_tag(first), detail::sanitize_tag(rest)...);
             for (auto& test : test_list) test.tags(first, rest...);
             return *this;
         }
@@ -942,6 +969,14 @@ namespace dough
         }
 
         /**
+        * @brief get list of tests
+        */
+        const std::vector<test>& tests() const noexcept
+        {
+            return test_list;
+        }
+
+        /**
         * @brief run all tests in a suite
         */
         stats run()
@@ -963,7 +998,6 @@ namespace dough
 
                 st.run++;
             }
-            //finish_print();
             summary_print(st);
             return st;
         }
@@ -1069,6 +1103,221 @@ namespace dough
         std::vector<test> test_list;
     };
 
+    namespace detail
+    {
+        /**
+        * @brief message that is printed on help command
+        */
+        const char* help_message =
+            "Print help\n"
+            "    ./tests --help\n"
+            "    ./tests -h\n"
+            "\n"
+            "Run all tests. Any include tags are ignored\n"
+            "    ./tests\n"
+            "    ./tests -a\n"
+            "    ./tests --all\n"
+            "\n"
+            "Run specific suites \n"
+            "(comma-separated, spaces around commas are ignored)\n"
+            "    ./tests --suites=\"database, math vec\"\n"
+            "    ./tests -s \"database, math vec\"\n"
+            "\n"
+            "Filter by tags (exclude with '!')\n"
+            "    ./tests --tags=\"fast, !network\"\n"
+            "    ./tests -t \"fast, !network\"\n"
+            "\n"
+            "List all available tags\n"
+            "    ./tests --list\n"
+            "    ./tests -l\n"
+            "\n"
+            "Combine to apply filter to specific suites\n"
+            "    ./tests --suites=\"database\" --tags=\"!fast\"\n"
+            "\n"
+            "If a command to run tests is combined with --help or --list,\n"
+            "the latter takes priority. E.g., here only the help will be \n"
+            "prined, but no tests will run\n"
+            "    ./tests --all --help\n"
+            "\n"
+            "If both --help and --list are used, the first command listed\n"
+            "takes priority. Here, only --list will be executed\n"
+            "    ./tests --list --help\n";
+
+        /**
+        * @brief trim string from the left
+        */
+        inline void trim_l(std::string& s) 
+        {
+            s.erase(s.begin(), std::find_if(s.begin(), s.end(), 
+                [](unsigned char ch) { return !std::isspace(ch); }));
+        }
+
+        /**
+        * @brief trim string from the right
+        */
+        inline void trim_r(std::string& s)
+        {
+            s.erase(std::find_if(s.rbegin(), s.rend(), 
+                [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
+        }
+
+        /**
+        * @brief trim string from both sides
+        */
+        inline void trim(std::string& s) 
+        {
+            trim_l(s);
+            trim_r(s);
+        }
+
+        /**
+        * @struct cli_command
+        * @brief parsed cli command
+        */
+        struct cli_command
+        {
+            std::unordered_set<std::string> inc_tags;
+            std::unordered_set<std::string> exc_tags;
+            std::string error_msg;
+            std::vector<std::string> suites;
+            bool list = false;
+            bool help = false;
+            bool run_all = false;
+        };
+
+        /**
+        * @brief format cli error
+        */
+        std::string cli_error_format(const std::string& str)
+        {
+            return std::format("[CLI  ] Error: {}", str);
+        }
+
+        /**
+        * @brief parse suites
+        */
+        void cli_parse_suites(cli_command& cmd, const std::string& value)
+        {
+            std::vector<std::string> suites;
+            std::stringstream sstr(value);
+            std::string part;
+            while (std::getline(sstr, part, ','))
+            {
+                trim(part);
+                cmd.suites.push_back(part);
+            }
+        }
+
+        /**
+        * @brief parse tags
+        */
+        void cli_parse_tags(cli_command& cmd, const std::string& value)
+        {
+            std::vector<std::string> suites;
+            std::stringstream sstr(value);
+            std::string part;
+            while (std::getline(sstr, part, ','))
+            {
+                trim(part);
+                if (part.starts_with('!')) cmd.exc_tags.insert(part);
+                else cmd.inc_tags.insert(part);
+            }
+        }
+
+        /**
+        * @brief parses cl args into a command
+        */
+        cli_command cli_parse(int argc, char** argv)
+        {
+            cli_command command;
+            std::vector<std::string> arguments(argv + 1, argv + argc);
+            size_t arg_size = arguments.size();
+
+            auto get_value = [&](const std::string& arg) -> std::optional<std::string>
+                {
+                    auto ind = arg.find('=');
+                    if (ind == arg.npos)
+                    {
+                        command.error_msg = cli_error_format(
+                            std::format("missing '=' when passing values in '{}'", arg));
+                        return std::nullopt;
+                    }
+                    return arg.substr(ind + 1);
+                };
+
+            if (arg_size == 0)
+            {
+                command.run_all = true;
+                return command; // run all if no args passed
+            }
+
+            for (size_t i = 0; i < arg_size; ++i)
+            {
+                if (arguments[i] == "-h" || arguments[i] == "--help")
+                {
+                    command.help = true;
+                    return command; // help overrides all other args
+                }
+
+                else if (arguments[i] == "-l" || arguments[i] == "--list")
+                {
+                    command.list = true;
+                    return command; // list also overrides if is first
+                }
+
+                else if (arguments[i] == "-s")
+                {
+                    if (i == arg_size - 1)
+                    {
+                        command.error_msg = cli_error_format("missing argument after '-s'");
+                        return command; // no reason to parse after the error
+                    }
+                    // pass the next arg since they are delim'ed by space: -s "suite"
+                    cli_parse_suites(command, arguments[++i]);
+                }
+                else if (arguments[i].starts_with("--suites"))
+                {
+                    // get value from the same arg
+                    auto value = get_value(arguments[i]);
+                    if (value) cli_parse_suites(command, value.value());
+                    else return command; // return with error from get_value
+                }
+
+                else if (arguments[i] == "-t")
+                {
+                    if (i == arg_size - 1)
+                    {
+                        command.error_msg = cli_error_format("missing argument after '-t'");
+                        return command; // no reason to parse after the error
+                    }
+                    cli_parse_tags(command, arguments[++i]);
+                }
+                else if (arguments[i].starts_with("--tags"))
+                {
+                    // get value from the same arg
+                    auto value = get_value(arguments[i]);
+                    if (value) cli_parse_tags(command, value.value());
+                    else return command; // return with error from get_value
+                }
+
+                else if (arguments[i] == "-a" || arguments[i] == "--all")
+                {
+                    command.run_all = true;
+                    // no return to get exclude tags
+                }
+
+                else
+                {
+                    command.error_msg = cli_error_format(
+                        std::format("unknown argument {}", arguments[i]));
+                    return command;
+                }
+            }
+
+            return command;
+        }
+    }
+
     /**
     * @class registry
     * @brief class that stores and runs tests, either individually or all at once
@@ -1081,7 +1330,7 @@ namespace dough
         */
         dough::suite& suite(std::string name) noexcept
         {
-            auto& ns = suite_list.emplace_back(name);
+            auto& ns = suite_list.emplace_back(detail::sanitize_tag(name));
             return ns;
         }
 
@@ -1129,7 +1378,7 @@ namespace dough
         }
 
         /**
-        * @brief run tests with filtering by tag
+        * @brief run tests with filtering by tag, exclude optional
         */
         void run(
             const include_tags& inc_tags,
@@ -1144,6 +1393,96 @@ namespace dough
                 sum.stats[st.name()] = st.run(inc_tags, exc_tags);
             }
             summary_print(sum);
+        }
+
+        /**
+        * @brief run tests with filtering by tag, include optional
+        */
+        void run(
+            const exclude_tags& exc_tags,
+            const include_tags& inc_tags = {})
+        {
+            run(inc_tags, exc_tags);
+        }
+
+        /**
+        * @brief run tests of a specific suite with filtering by tag
+        */
+        void run(
+            const std::string& suite_name,
+            const include_tags& inc_tags = {},
+            const exclude_tags& exc_tags = {})
+        {
+            summary sum;
+            for (auto& st : suite_list)
+            {
+                if (st.name() != suite_name) continue;
+
+                // skip suites with excluded tags
+                if (detail::uset_have_common(st.tags(), exc_tags.set)) continue;
+
+                sum.stats[st.name()] = st.run(inc_tags, exc_tags);
+            }
+            summary_print(sum);
+        }
+
+        /**
+        * @brief run based on command line arguments
+        */
+        void run(int argc, char** argv)
+        {
+            auto cmd = detail::cli_parse(argc, argv);
+            
+            //std::cout << std::boolalpha <<
+            //    cmd.error_msg << '\n' <<
+            //    cmd.help << '\n' <<
+            //    cmd.run_all << '\n' <<
+            //    cmd.list << '\n' <<
+            //    cmd.suites.size() << '\n' <<
+            //    cmd.inc_tags.size();
+            //for (auto& e : cmd.inc_tags) std::cout << ' ' << e;
+            //std::cout << '\n' <<
+            //    cmd.exc_tags.size() << '\n';
+            
+
+            if (!cmd.error_msg.empty())
+            {
+                std::cerr << cmd.error_msg << '\n';
+                return;
+            }
+
+            if (cmd.help)
+            {
+                std::cout << detail::help_message << '\n';
+                return;
+            }
+
+            if (cmd.list)
+            {
+                list_print();
+                return;
+            }
+
+            if (cmd.run_all)
+            {
+                run(exclude_tags{ cmd.exc_tags });
+                return;
+            }
+
+            if (!cmd.suites.empty())
+            {
+                for (const auto& s : cmd.suites)
+                {
+                    run(s,
+                        include_tags{ cmd.inc_tags },
+                        exclude_tags{ cmd.exc_tags });
+                }
+            }
+            else
+            {
+                run(include_tags{ cmd.inc_tags },
+                    exclude_tags{ cmd.exc_tags });
+            }
         }
 
     private:
@@ -1196,11 +1535,60 @@ namespace dough
             }
             else
             {
-                sstr << "[DOUGH] All tests passed";
+                if (run > 0) sstr << "[DOUGH] All tests passed";
             }
 
             sstr << '\n';
             std::cout << sstr.str();
+        }
+
+        /**
+        * @brief prints a list of all registeret tests
+        */
+        void list_print()
+        {
+            for (const auto& st : suite_list)
+            {
+                // - suite name [ tag1, tag2 ]
+                std::cout << "\n- " << st.name();
+                if (st.tags().size() > 0)
+                {
+                    std::cout << " [ ";
+                    for (auto it = st.tags().begin(); it != st.tags().end(); ++it)
+                    {
+                        std::cout << (*it) << 
+                            (it != (--st.tags().end()) ? ", " : "");
+                    }
+                    std::cout << " ]";
+                }
+                std::cout << '\n';
+
+                const auto tab = "    ";
+                if (st.tests().empty())
+                {
+                    std::cout << tab << "*no registered tests*";
+                }
+                else
+                {
+                    for (const auto& tst : st.tests())
+                    {
+                        std::cout << tab << "- " << tst.name();
+                        if (tst.tags().size() > 0)
+                        {
+                            std::cout << " [ ";
+                            for (auto it = tst.tags().begin(); it != tst.tags().end(); ++it)
+                            {
+                                std::cout << (*it) <<
+                                    (it != (--tst.tags().end()) ? ", " : "");
+                            }
+                            std::cout << " ]";
+                        }
+                        std::cout << '\n';
+                    }
+                }
+
+            }
+            std::cout << '\n';
         }
 
     private:

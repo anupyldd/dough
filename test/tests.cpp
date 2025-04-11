@@ -1,9 +1,9 @@
 #include "../src/dough.hpp"
 
-int main()
+int main(int argc, char** argv)
 {
     using namespace dough;
-
+    
     const std::string see{ "should see this" };
     const std::string no_see{ "should NOT see this" };
 
@@ -113,10 +113,13 @@ int main()
                 require_all_near({ 1.001f,1.0012f }, 1.0015f, 0.001f, no_see);
                 })
         );
-
-    reg.suite("filter (no tags)")
+        */
+    
+    reg.suite("filter")
+        .tags("!test,","what ever space")
         .add(
             test("no tags 1")
+            .tags("a", "b")
             .func([&]() { })
         )
         .add(
@@ -132,13 +135,13 @@ int main()
         )
         .add(
             test("own tags")
-            .tags("test tag", "test tag 2")
+            .tags("!test,", "test tag 2")
             .func([&]() { })
         );
     
-    */
+    
 
-    reg.run(inc("func"));
+    reg.run(argc, argv);
 
     //std::cout << "\n\n--- should see 2 tests ---\n";
     //reg.run(inc("suite tag"));
