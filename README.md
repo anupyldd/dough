@@ -54,7 +54,7 @@ Command-line interface:
 ./tests --all
 
 # Run specific suites 
-#(comma-separated, spaces around commas are ignored)
+# (comma-separated, spaces around commas are ignored)
 ./tests --suites="database,math vec"
 ./tests -s "database,math vec"
 
@@ -152,6 +152,7 @@ int main(int argc, char** argv)
     // if inc() is empty, all tests will be run, unless they are skipped
     // here, only 'test 2' from 'suite 1' will run
     reg.run(inc("tag 1"), exc("tag 3", "tag 4"));
+    std::cout << "--------------------\n";
     // run tests based on command line arguments
     reg.run(argc, argv);
 }
