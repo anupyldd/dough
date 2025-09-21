@@ -101,7 +101,7 @@ int main(int argc, char** argv)
         // set the 'setup' function, it'll run before each test in this suite
         // (optional)
         .setup([]() {std::cout << "first suite setup\n"; })
-        // set the 'teardown' function, it'll run before each test in this suite
+        // set the 'teardown' function, it'll run after each test in this suite
         // (optional)
         .teardown([]() {std::cout << "first suite teardown\n"; })
         // add a test
